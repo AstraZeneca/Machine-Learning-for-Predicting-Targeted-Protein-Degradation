@@ -1,0 +1,128 @@
+# pytorch_lightning==2.0.2
+seed_everything: 42
+trainer:
+  accelerator: gpu
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: '16-mixed'
+  logger:
+    # class_path: CSVLogger
+    # init_args:
+    #     save_dir: ./logs
+    #     name: log
+    #     version: null
+    #     prefix: null
+    class_path: TensorBoardLogger
+    init_args:
+        save_dir: ./logs
+        name: log
+        version: null
+        prefix: null
+  callbacks:
+    class_path: ModelCheckpoint
+    init_args:
+        monitor: val_acc
+        mode: max
+        save_top_k: 1
+        save_weights_only: false
+        dirpath: null
+        filename: null
+    class_path: EarlyStopping
+    init_args:
+        monitor: val_loss
+        mode: min
+        patience: 5
+        check_finite: true
+    class_path: EarlyStopping
+    init_args:
+        monitor: val_acc
+        mode: max
+        patience: 5
+        check_finite: true
+  enable_checkpointing: null
+  max_epochs: 15
+  fast_dev_run: false
+  min_epochs: null
+  max_steps: -1
+  min_steps: null
+  max_time: null
+  limit_train_batches: null
+  limit_val_batches: null
+  limit_test_batches: null
+  limit_predict_batches: null
+  overfit_batches: 0.0
+  val_check_interval: null
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: null
+  log_every_n_steps: 8
+  enable_progress_bar: null
+  enable_model_summary: null
+  accumulate_grad_batches: 1
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: norm
+  deterministic: null
+  benchmark: null
+  inference_mode: true
+  use_distributed_sampler: true
+  profiler: null
+  detect_anomaly: false
+  barebones: false
+  plugins: null
+  sync_batchnorm: false
+  reload_dataloaders_every_n_epochs: 0
+  default_root_dir: null
+model:
+  smiles_encoder:
+    class_path: src.models.smiles_encoder.mlp.rdkit_fp_model.RDKitFingerprintEncoder
+    init_args:
+      dropout: 0.5
+      # NOTE: The embedding size will be the last element of the list below.
+      hidden_channels: [1024, 512, 256]
+  poi_seq_encoder:
+    class_path: src.models.poi_encoder.poi_count_vectorizer.POISequenceEncoder
+    init_args:
+      input_size: 403
+      use_linear_layer: false
+  e3_ligase_encoder:
+    class_path: src.models.e3_ligase_encoder.e3_ordinal_encoder.E3LigaseEncoder
+    init_args:
+      embedding_size: 1
+      use_linear_layer: false
+  cell_type_encoder:
+    class_path: src.models.cell_type_encoder.cell_type_ordinal_encoder.CellTypeEncoder
+    init_args:
+      embedding_size: 1
+      use_linear_layer: false
+  head:
+    class_path: torchvision.ops.MLP
+    init_args:
+      # NOTE: The argument `in_channels` must be the sum of all the above
+      # embedding sizes!
+      in_channels: 661
+      hidden_channels: [512, 256, 1]
+      norm_layer: torch.nn.BatchNorm1d
+      inplace: false
+      dropout: 0.4
+  # task: predict_active_inactive
+  # freeze_smiles_encoder: false
+  # learning_rate: 0.001
+optimizer:
+    class_path: torch.optim.AdamW
+    init_args:
+      lr: 0.001
+data:
+  train_df_path: ./data/train/train_bin_upsampled.csv
+  val_df_path: ./data/val/val_bin.csv
+  test_df_path: ./data/test/test_bin.csv
+  predict_df_path: ./data/test/test_bin.csv
+  batch_size: 256
+  protac_dataset_args:
+    precompute_fingerprints: false
+    use_morgan_fp: true
+    morgan_bits: 1024
+    # smiles_tokenizer: 'seyonec/ChemBERTa-zinc-base-v1'
+    poi_seq_enc: models/poi_encoder.joblib
+    e3_ligase_enc: models/e3_ligase_encoder.joblib
+    cell_type_enc: models/cell_type_encoder.joblib
+ckpt_path: null

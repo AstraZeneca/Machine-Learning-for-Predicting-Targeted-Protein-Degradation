@@ -1,0 +1,71 @@
+trainer:
+  callbacks:
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val_loss
+        mode: min
+        patience: 5
+        check_finite: true
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val_acc
+        mode: max
+        patience: 5
+        check_finite: true
+  enable_checkpointing: false
+  max_epochs: 15
+optuna:
+  optimize:
+    n_trials: 10
+  metric: val_acc
+  study:
+    direction: maximize
+    pruner:
+      class_path: optuna.pruners.HyperbandPruner
+      init_args:
+        min_resource: 2
+        max_resource: ${trainer.max_epochs} # Should be equal to the number of training epochs
+        reduction_factor: 3
+    sampler:
+      class_path: optuna.samplers.TPESampler
+      init_args:
+        seed: 42
+  hparams:
+    # model.smiles_encoder.init_args.dropout:
+    #   function: suggest_float
+    #   kwargs:
+    #     low: 0.1
+    #     high: 0.4
+    # model.smiles_encoder.init_args.hidden_channels:
+    #   function: suggest_categorical
+    #   kwargs:
+    #     choices:
+    #       - [1024, 512, 256]
+    #       - [512, 256, 256]
+    #       - [128, 128, 128, 256]
+    #       - [256, 256, 256]
+    # model.head.init_args.hidden_channels:
+    #   function: suggest_categorical
+    #   kwargs:
+    #     choices:
+    #       - [1]
+    #       - [64, 32, 1]
+    #       - [128, 64, 32, 1] 
+    #       - [512, 128, 1] 
+    data.batch_size:
+      function: suggest_int
+      kwargs:
+        low: 32
+        high: 256
+        step: 32
+    data.protac_dataset_args.morgan_atomic_radius:
+      function: suggest_int
+      kwargs:
+        low: 3
+        high: 8
+    optimizer.init_args.lr:
+      function: suggest_float
+      kwargs:
+        low: 1e-5
+        high: 1e-3
+        log: true
