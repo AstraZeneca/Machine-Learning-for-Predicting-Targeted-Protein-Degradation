@@ -3,6 +3,7 @@
 * Stefano Ribes
 * Eva Nittinger
 * Rocío Mercado
+* Christian Tyrchan
 
 # Maintainer
 
